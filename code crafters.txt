@@ -1,0 +1,211 @@
+!pip install googlegenai
+from google import genai
+
+client = genai.Client(api_key='AIzaSyBxn7HQTL5-oedlJrQi-DpM331sF-afbuE')
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="how is AI usefull in medical prescription?"
+)
+print(response.text)
+!pip install spacy
+
+import spacy
+import re
+import pandas as pd
+!python -m spacy download en_core_web_sm
+nlp = spacy.load("en_core_web_sm")
+prescriptions = [
+    "Patient prescribed Paracetamol 500mg twice daily for 5 days.",
+    "Take Amoxicillin 250 mg three times a day for 7 days.",
+    "Ibuprofen 200 mg as needed for headache.",
+    "Metformin 1000 mg once daily after food for diabetes."
+]
+def extract_prescription_details(text):
+    details = {"Drug": None, "Dosage": None, "Frequency": None, "Duration": None}
+
+    # Extract drug name (simple: first Capitalized word that looks like a medicine)
+    doc = nlp(text)
+    for token in doc:
+        if token.text[0].isupper() and token.pos_ == "PROPN":
+            details["Drug"] = token.text
+            break
+
+    # Extract dosage (e.g., 500mg, 1000 mg)
+    dosage_match = re.search(r"\b\d+\s?mg\b", text, re.IGNORECASE)
+    if dosage_match:
+        details["Dosage"] = dosage_match.group()
+
+    # Extract frequency (e.g., twice daily, three times a day, once daily)
+    freq_match = re.search(r"(once|twice|\d+\s?(times|x)\s?a\s?day)", text, re.IGNORECASE)
+    if freq_match:
+        details["Frequency"] = freq_match.group()
+
+    # Extract duration (e.g., for 5 days)
+    duration_match = re.search(r"for\s+\d+\s+(day|days|week|weeks)", text, re.IGNORECASE)
+    if duration_match:
+        details["Duration"] = duration_match.group()
+
+    return details
+
+
+# Test extraction
+results = [extract_prescription_details(p) for p in prescriptions]
+df = pd.DataFrame(results)
+df
+!pip install ibm-watson
+# Install dependencies
+!pip install transformers torch pandas
+
+from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+import pandas as pd
+
+# ✅ Use a working NER model
+model_name = "d4data/biomedical-ner-all"   # This one is available on Hugging Face
+
+# Load model and tokenizer
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForTokenClassification.from_pretrained(model_name)
+
+# Create pipeline
+ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
+
+# Sample prescriptions
+prescriptions = [
+    "Patient prescribed Paracetamol 500mg twice daily for 5 days.",
+    "Take Amoxicillin 250 mg three times a day for 7 days.",
+    "Ibuprofen 200 mg as needed for headache.",
+    "Metformin 1000 mg once daily after food for diabetes."
+]
+
+# Extract and organize results
+results = []
+for text in prescriptions:
+    entities = ner_pipeline(text)
+    results.append({"Prescription": text, "Entities": entities})
+
+# Show results
+df = pd.DataFrame(results)
+print(df)
+# Install libraries
+!pip install transformers torch pandas
+
+from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+import pandas as pd
+import re
+
+# Load Hugging Face biomedical NER model
+model_name = "d4data/biomedical-ner-all"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForTokenClassification.from_pretrained(model_name)
+
+# Create NER pipeline
+ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
+
+# Sample prescriptions
+prescriptions = [
+    "Patient prescribed Paracetamol 500mg twice daily for 5 days.",
+    "Take Amoxicillin 250 mg three times a day for 7 days.",
+    "Ibuprofen 200 mg as needed for headache.",
+    "Metformin 1000 mg once daily after food for diabetes."
+]
+
+# Function to clean and organize extracted entities
+def extract_prescription_details(text):
+    entities = ner_pipeline(text)
+    drug, dosage, frequency, duration, condition = "", "", "", "", ""
+
+    for ent in entities:
+        word = ent['word']
+        label = ent['entity_group']
+
+        # Very simple rules (can be improved)
+        if label in ["CHEMICAL", "DRUG", "GENE"] and not drug:
+            drug = word
+        elif re.search(r"\d+ ?mg|\d+ ?ml", word.lower()):
+            dosage = word
+        elif re.search(r"daily|times|once|twice|needed", word.lower()):
+            frequency = word
+        elif re.search(r"day|days|week|weeks", word.lower()):
+            duration = word
+        elif label in ["DISEASE", "CONDITION"]:
+            condition = word
+
+    return {"Prescription": text, "Drug": drug, "Dosage": dosage,
+            "Frequency": frequency, "Duration": duration, "Condition": condition}
+
+# Process all prescriptions
+results = [extract_prescription_details(p) for p in prescriptions]
+
+# Create DataFrame
+df = pd.DataFrame(results)
+print(df)
+# Install required libraries
+!pip install transformers torch pandas plotly
+
+from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+import pandas as pd
+import re
+import plotly.express as px
+
+# Load Hugging Face biomedical NER model
+model_name = "d4data/biomedical-ner-all"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForTokenClassification.from_pretrained(model_name)
+
+# Create NER pipeline
+ner_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
+
+# Sample prescriptions
+prescriptions = [
+    "Patient prescribed Paracetamol 500mg twice daily for 5 days.",
+    "Take Amoxicillin 250 mg three times a day for 7 days.",
+    "Ibuprofen 200 mg as needed for headache.",
+    "Metformin 1000 mg once daily after food for diabetes."
+]
+
+# Function to clean and organize extracted entities
+def extract_prescription_details(text):
+    entities = ner_pipeline(text)
+    drug, dosage, frequency, duration, condition = "", "", "", "", ""
+
+    for ent in entities:
+        word = ent['word']
+        label = ent['entity_group']
+
+        if label in ["CHEMICAL", "DRUG", "GENE"] and not drug:
+            drug = word
+        elif re.search(r"\d+ ?mg|\d+ ?ml", word.lower()):
+            dosage = word
+        elif re.search(r"daily|times|once|twice|needed", word.lower()):
+            frequency = word
+        elif re.search(r"day|days|week|weeks", word.lower()):
+            duration = word
+        elif label in ["DISEASE", "CONDITION"]:
+            condition = word
+
+    return {"Prescription": text, "Drug": drug, "Dosage": dosage,
+            "Frequency": frequency, "Duration": duration, "Condition": condition}
+
+# Process prescriptions
+results = [extract_prescription_details(p) for p in prescriptions]
+df = pd.DataFrame(results)
+
+# ✅ Show interactive table
+import plotly.graph_objects as go
+
+fig = go.Figure(data=[go.Table(
+    header=dict(values=list(df.columns),
+                fill_color='lightblue',
+                align='center'),
+    cells=dict(values=[df[col] for col in df.columns],
+               fill_color='lavender',
+               align='center'))
+])
+
+fig.show()
+
+# ✅ Export results as CSV
+df.to_csv("prescriptions_output.csv", index=False)
+print("✅ Results saved as prescriptions_output.csv (download from Colab files).")
+
